@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets and generated LLM cache
+.env
+.env.*
+!.env.example
+server/.cache/

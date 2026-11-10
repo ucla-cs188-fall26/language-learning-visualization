@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# Word Map app
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+For setup, see the [main README](../README.md). The app is a local prototype: the API server has no authentication and spends API credits, so it only listens on `127.0.0.1`. Add authentication and rate limiting before deploying it.
 
-Currently, two official plugins are available:
+## How it fits together
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+React app (Vite) -- /api proxy --> Node API (Hono) --> Claude API
+      |                                 |
+ localStorage                     JSON file cache
+ (personal map)                   (server/.cache/)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The browser never calls Claude directly, which keeps the API key on the server.
+
+| Path                      | What's there                                                     |
+| ------------------------- | ---------------------------------------------------------------- |
+| `shared/schemas.ts`       | Zod schemas for API requests and LLM output, and the shared types |
+| `server/prompts.ts`       | The prompts                                                      |
+| `server/llm.ts`           | Claude calls, error handling and cleanup of LLM output           |
+| `server/cache.ts`         | The JSON file cache                                              |
+| `src/App.tsx`             | The flow state and API requests                                  |
+| `src/components/`         | One component for each part of the flow                          |
+| `src/lib/layout.ts`       | Word map and personal map layouts                                |
+| `src/lib/direction.ts`    | The "I want something more..." logic                             |
+| `src/lib/savedWords.ts`   | Saved words in `localStorage`                                    |
+
+## Working on it
+
+- **Changing a prompt:** increase `PROMPT_VERSION` in `server/prompts.ts`. Otherwise cached responses keep being returned.
+- **Changing the model:** set `CLAUDE_MODEL` in `.env`.
+- **Clearing the cache:** delete `server/.cache/`. The next lookup for each word then makes a new API call.
+- **Adding a language:** add an entry to `shared/languages.ts`.
+- **Content accuracy:** all language content is generated, so have a speaker of that language check it before relying on it in a demo or study.
